@@ -1,8 +1,6 @@
-<div align="center">
 # 🏢 Engwah Leasing Portal
 ![Static Badge](https://img.shields.io/badge/Status%3A-Ready%20to%20Deploy-softgreen?style=plastic)
 ![Static Badge](https://img.shields.io/badge/Version%3A-v1-blue?style=plastic)
-</div>
 
 * **Zero-Maintenance Deployment:** The entire application stack is fully containerized.
 * **Local Deployment:** No Cloud charges.
