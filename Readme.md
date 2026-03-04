@@ -75,7 +75,7 @@ Dedicated communication channels to keep every team member in the loop without l
 A centralized hub to share the latest documentation and files securely with the whole team.
 
 <div align="center">
-Built with ❤️ for the EW*
+Built with ❤️ for the EW
 
 </div>
 
