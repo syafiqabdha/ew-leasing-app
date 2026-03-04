@@ -163,8 +163,8 @@ export function NotificationPanel({ isOpen, onClose, user, malls, isMobile, anno
         setShowForm(false);
     };
 
-    const canCreate = ['admin', 'staff'].includes(user?.role);
-    const canDelete = user?.role === 'admin';
+    const canCreate = ['admin', 'director', 'staff'].includes(user?.role);
+    const canDelete = ['admin', 'director'].includes(user?.role);
 
     if (!isOpen) return null;
 

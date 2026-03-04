@@ -3,11 +3,13 @@ import {
   Building, MapPin, User, LogOut, Search, Edit3, Check, X,
   LayoutGrid, Store, FileText, Download, Upload, Shield,
   Droplet, Zap, Wifi, Wind, AlertTriangle, File, Plus, Trash2,
-  Users, Key, FolderOpen, Image, Camera, Map, FilePlus, Settings, Menu
+  Users, Key, FolderOpen, Image, Camera, Map, FilePlus, Settings, Menu,
+  Clock, Lock, Activity
 } from 'lucide-react';
 import { NotificationBell, NotificationPanel, useAnnouncements } from './components/NotificationSystem';
 import EvaChatbot from './components/EvaChatbot';
 import Dashboard from './components/Dashboard';
+import PWAReloadPrompt from './components/PWAReloadPrompt';
 
 // --- CONFIGURATION ---
 // ULTRA-ROBUST: Use relative path. Vite Proxy handles the rest.
@@ -82,7 +84,7 @@ const GlobalStyles = () => (
     
     .neu-input {
       background: var(--surface-color);
-      border: none;
+      border: 1px solid rgba(255,255,255,0.4);
       border-radius: 12px;
       box-shadow: inset 5px 5px 10px var(--shadow-dark), inset -5px -5px 10px var(--shadow-light);
       color: var(--text-main);
@@ -103,7 +105,7 @@ const GlobalStyles = () => (
       color: #64748b;
       font-weight: 600;
       transition: all 0.2s ease;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.4);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -116,8 +118,8 @@ const GlobalStyles = () => (
     }
 
     .neu-btn:active, .neu-btn.active {
-      box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
-      color: var(--accent);
+      box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light) !important;
+      color: #4f46e5 !important;
       transform: translateY(1px);
     }
 
@@ -230,7 +232,7 @@ export default function App() {
       if (docsRes.ok) setDocuments(await docsRes.json());
 
       // Fetch users ONLY if the user is an admin
-      if (role === 'admin') {
+      if (['admin', 'director'].includes(role)) {
         const usersRes = await fetch(`${API_URL}/users`, { headers });
         if (usersRes.ok) setUsers(await usersRes.json());
       } else {
@@ -243,7 +245,7 @@ export default function App() {
       }
 
       // Fetch contacts if Admin or Staff
-      if (role === 'admin' || role === 'staff') {
+      if (['admin', 'director', 'staff'].includes(role)) {
         const contactsRes = await fetch(`${API_URL}/contacts`, { headers });
         if (contactsRes.ok) setContacts(await contactsRes.json());
       }
@@ -630,7 +632,7 @@ export default function App() {
             onDeleteDoc={handleDeleteDocument}
           />
         )}
-        {activeTab === 'contacts' && ['admin', 'staff'].includes(user.role) && (
+        {activeTab === 'contacts' && ['admin', 'director', 'staff'].includes(user.role) && (
           <ContactsPanel
             user={user}
             contacts={contacts}
@@ -665,6 +667,8 @@ export default function App() {
           onDelete={deleteAnnouncement}
         />
       )}
+
+      <PWAReloadPrompt />
     </div>
   );
 }
@@ -797,7 +801,7 @@ function Navbar({ user, onLogout, activeTab, setActiveTab, notificationsCount, o
     { id: 'documents', label: 'Documents', icon: FolderOpen },
   ];
 
-  if (['admin', 'staff'].includes(user.role)) {
+  if (['admin', 'director', 'staff'].includes(user.role)) {
     tabs.push({ id: 'contacts', label: 'Contacts', icon: Users });
   }
 
@@ -934,14 +938,14 @@ function MallDashboard({ user, malls, units, onSaveUnit, onDeleteUnit, onUpdateI
           <h1 className="text-4xl font-extrabold text-slate-700 mb-2 tracking-tight">Property Portfolio</h1>
           <p className="text-slate-500 font-medium">Select a property to manage units and specifications.</p>
         </div>
-        {user.role === 'admin' && (
+        {['admin', 'director'].includes(user.role) && (
           <button onClick={() => setIsManaging(!isManaging)} className="mt-4 md:mt-0 neu-btn neu-btn-primary px-6 py-3">
             <Settings size={18} className="mr-2" /> Manage Properties
           </button>
         )}
       </div>
 
-      {isManaging && user.role === 'admin' && (
+      {isManaging && ['admin', 'director'].includes(user.role) && (
         <ManagePropertiesPanel
           malls={malls}
           onClose={() => setIsManaging(false)}
@@ -964,7 +968,7 @@ function MallDashboard({ user, malls, units, onSaveUnit, onDeleteUnit, onUpdateI
               totalUnits={totalUnits}
               vacantUnits={vacantUnits}
               onClick={() => setSelectedMall(mall)}
-              isAdmin={user.role === 'admin'}
+              isAdmin={['admin', 'director'].includes(user.role)}
               onUpdateImage={onUpdateImage}
             />
           );
@@ -1248,7 +1252,7 @@ function MallDetail({ user, mall, units, onBack, onSaveUnit, onDeleteUnit }) {
         <button onClick={onBack} className="neu-btn px-4 py-2 text-slate-500 hover:text-indigo-600">
           <span className="mr-2">←</span> Back
         </button>
-        {user.role === 'admin' && (
+        {['admin', 'director'].includes(user.role) && (
           <button onClick={() => setIsManagingLevels(true)} className="neu-btn px-4 py-2 text-slate-600">
             <Settings size={16} className="mr-2" /> Manage Levels
           </button>
@@ -1257,10 +1261,10 @@ function MallDetail({ user, mall, units, onBack, onSaveUnit, onDeleteUnit }) {
 
       <div className="neu-panel p-8 mb-10 flex flex-col md:flex-row md:items-end justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-700 mb-2">{mall.name}</h1>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight mb-2">{mall.name}</h1>
           <p className="text-slate-500 font-medium flex items-center"><MapPin size={16} className="mr-2 text-indigo-500" />{mall.location}</p>
         </div>
-        {user.role === 'admin' && (
+        {['admin', 'director'].includes(user.role) && (
           <button onClick={handleAddLevel} className="mt-6 md:mt-0 neu-btn neu-btn-primary px-6 py-3">
             <Plus size={18} className="mr-2" /> Add Level
           </button>
@@ -1305,7 +1309,7 @@ function MallDetail({ user, mall, units, onBack, onSaveUnit, onDeleteUnit }) {
               ))}
 
               {/* Add Unit Card */}
-              {user.role === 'admin' && (
+              {['admin', 'director'].includes(user.role) && (
                 <div onClick={() => handleAddNewUnit(level.name, level.order)} className="neu-card p-4 cursor-pointer flex flex-col items-center justify-center text-slate-400 hover:text-indigo-500 group min-h-[140px] shadow-inner">
                   <div className="neu-icon-box mb-2 group-hover:text-indigo-500">
                     <Plus size={20} />
@@ -1320,7 +1324,7 @@ function MallDetail({ user, mall, units, onBack, onSaveUnit, onDeleteUnit }) {
         {levelsData.length === 0 && (
           <div className="neu-panel p-12 text-center">
             <p className="text-slate-500 mb-4">No levels initialized.</p>
-            {user.role === 'admin' && (
+            {['admin', 'director'].includes(user.role) && (
               <button onClick={handleAddLevel} className="neu-btn inline-flex px-6 py-3">Create First Level</button>
             )}
           </div>
@@ -1446,18 +1450,25 @@ function ManageLevelsModal({ mall, levels, onClose }) {
 }
 
 function StatusBadge({ status }) {
-  const colors = {
-    vacant: 'text-emerald-500',
-    occupied: 'text-blue-500',
-    reserved: 'text-amber-500'
+  const configs = {
+    vacant: { color: 'text-emerald-500', Icon: Check },
+    occupied: { color: 'text-blue-500', Icon: Lock },
+    reserved: { color: 'text-amber-500', Icon: Clock }
   };
-  return <span className={`text-[10px] font-black uppercase tracking-widest ${colors[status]}`}>{status}</span>;
+  const { color, Icon } = configs[status] || { color: 'text-slate-500', Icon: Check };
+  return (
+    <span className={`inline-flex items-center text-[10px] font-black uppercase tracking-widest ${color}`}>
+      <Icon size={12} className="mr-1" />
+      {status}
+    </span>
+  );
 }
 
 // --- UNIT MODAL ---
 function UnitModal({ unit, mall, user, onClose, onSave, onDelete }) {
   const [isEditing, setIsEditing] = useState(unit.isNew || false);
   const [formData, setFormData] = useState({ ...unit });
+  const [activeTab, setActiveTab] = useState('overview');
 
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -1506,7 +1517,7 @@ Kit. Fresh:${formData.kitchen_fa ? `Yes (${formData.kitchen_fa_val})` : 'No'}`;
             <p className="text-sm text-slate-500 font-mono">L{unit.level} • {formData.area_sqm || 0} sqm</p>
           </div>
           <div className="flex items-center space-x-3">
-            {!isEditing && user.role === 'admin' && (
+            {!isEditing && ['admin', 'director'].includes(user.role) && (
               <button onClick={() => setIsEditing(true)} className="neu-btn neu-btn-primary px-4 py-2 text-sm">
                 <Edit3 size={16} className="mr-2" /> Edit
               </button>
@@ -1515,113 +1526,200 @@ Kit. Fresh:${formData.kitchen_fa ? `Yes (${formData.kitchen_fa_val})` : 'No'}`;
           </div>
         </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto p-8 flex-1">
-          {isEditing ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Section title="Identity" icon={<Building size={18} />}>
-                <Input label="Unit No" value={formData.unit_no} onChange={v => handleChange('unit_no', v)} />
-                <Input label="Area (sqm)" type="number" value={formData.area_sqm} onChange={v => handleChange('area_sqm', v)} />
-                <Input label="Status" type="select" options={['vacant', 'occupied', 'reserved']} value={formData.status} onChange={v => handleChange('status', v)} />
-              </Section>
-              <Section title="Tenant" icon={<User size={18} />}>
-                <Input label="Shop Name" value={formData.tenant_name} onChange={v => handleChange('tenant_name', v)} />
-                <Input label="PIC" value={formData.person_in_charge} onChange={v => handleChange('person_in_charge', v)} />
-                <Input label="Email" value={formData.contact_email} onChange={v => handleChange('contact_email', v)} />
-                <Input label="Phone" value={formData.contact_phone} onChange={v => handleChange('contact_phone', v)} />
-              </Section>
-              <Section title="M&E Basics" icon={<Droplet size={18} />}>
-                <Toggle label="Water Point" value={formData.water_point} onChange={v => handleChange('water_point', v)} />
-                {formData.water_point && <Input label="Pipe Dia" value={formData.water_pipe_diameter} onChange={v => handleChange('water_pipe_diameter', v)} />}
-                <Input label="Floor Traps" type="number" value={formData.floor_traps} onChange={v => handleChange('floor_traps', v)} />
-                <Toggle label="Gas Pipe" value={formData.gas_pipe} onChange={v => handleChange('gas_pipe', v)} />
-              </Section>
-              <Section title="Electrical" icon={<Zap size={18} />}>
-                <Input label="AC Power (kW)" type="number" value={formData.ac_power_kw} onChange={v => handleChange('ac_power_kw', v)} />
-                <Input label="FCU Units" type="number" value={formData.fcu_units} onChange={v => handleChange('fcu_units', v)} />
-                <Input label="Isolator (TPN)" value={formData.electric_isolator_tpn_val} onChange={v => handleChange('electric_isolator_tpn_val', v)} />
-                <Input label="Emerg. Lights" type="number" value={formData.emergency_lights} onChange={v => handleChange('emergency_lights', v)} />
-              </Section>
-              <Section title="Safety" icon={<Wifi size={18} />}>
-                <Input label="Fibre Ports" type="number" value={formData.fibre_port} onChange={v => handleChange('fibre_port', v)} />
-                <Input label="Data Ports" type="number" value={formData.data_ports} onChange={v => handleChange('data_ports', v)} />
-                <Input label="Sprinklers" type="number" value={formData.sprinkler} onChange={v => handleChange('sprinkler', v)} />
-                <Input label="PA Speakers" type="number" value={formData.pa_speaker} onChange={v => handleChange('pa_speaker', v)} />
-              </Section>
-              <Section title="Kitchen" icon={<Wind size={18} />}>
-                <Toggle label="Kitchen EA" value={formData.kitchen_ea} onChange={v => handleChange('kitchen_ea', v)} />
-                {formData.kitchen_ea && <Input label="Value" value={formData.kitchen_ea_val} onChange={v => handleChange('kitchen_ea_val', v)} />}
-                <Toggle label="Kitchen FA" value={formData.kitchen_fa} onChange={v => handleChange('kitchen_fa', v)} />
-                {formData.kitchen_fa && <Input label="Value" value={formData.kitchen_fa_val} onChange={v => handleChange('kitchen_fa_val', v)} />}
-              </Section>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="neu-card p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-                <DetailItem label="Status" value={<StatusBadge status={unit.status} />} />
-                <DetailItem label="Tenant" value={unit.tenant_name || '-'} />
-                <DetailItem label="PIC" value={unit.person_in_charge || '-'} />
-                <DetailItem label="Contact" value={unit.contact_phone || '-'} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="font-bold text-indigo-500 mb-4 flex items-center text-sm uppercase tracking-wider"><Zap size={16} className="mr-2" /> Specifications</h3>
-                  <div className="neu-card p-4 space-y-3">
-                    <SpecRow label="Area" value={`${unit.area_sqm} sqm`} />
-                    <SpecRow label="Water Point" value={unit.water_point ? 'Yes' : 'No'} sub={unit.water_pipe_diameter} />
-                    <SpecRow label="Floor Traps" value={unit.floor_traps} />
-                    <SpecRow label="AC Power" value={`${unit.ac_power_kw} kW`} />
-                    <SpecRow label="FCU Units" value={unit.fcu_units} />
-                    <SpecRow label="TPN Isolator" value={unit.electric_isolator_tpn_val || 'No'} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-indigo-500 mb-4 flex items-center text-sm uppercase tracking-wider"><Shield size={16} className="mr-2" /> Safety & Comms</h3>
-                  <div className="neu-card p-4 space-y-3">
-                    <SpecRow label="Emerg. Lights" value={unit.emergency_lights} />
-                    <SpecRow label="Exit Signage" value={unit.exit_signage} />
-                    <SpecRow label="Sprinklers" value={unit.sprinkler} />
-                    <SpecRow label="Fibre/Data" value={`${unit.fibre_port} / ${unit.data_ports}`} />
-                    <SpecRow label="Kitchen Exh." value={unit.kitchen_ea ? 'Yes' : 'No'} sub={unit.kitchen_ea_val} />
-                    <SpecRow label="Kitchen Fresh" value={unit.kitchen_fa ? 'Yes' : 'No'} sub={unit.kitchen_fa_val} />
-                  </div>
-                </div>
-              </div>
+        {/* Tabs Desktop & Mobile Scrollable */}
+        <div className="flex border-b border-slate-300/50 bg-white/40 overflow-x-auto no-scrollbar">
+          {[
+            { id: 'overview', label: 'Overview', icon: Building },
+            { id: 'specs', label: 'M&E / Specs', icon: Droplet },
+            { id: 'electricity', label: 'Electrical', icon: Zap },
+            { id: 'safety', label: 'Safety & Comms', icon: Shield },
+            { id: 'kitchen', label: 'Kitchen', icon: Wind },
+            { id: 'export', label: 'Export', icon: FileText }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center px-6 py-4 text-sm font-bold transition-colors whitespace-nowrap border-b-2
+                ${activeTab === tab.id ? 'border-indigo-600 text-indigo-700 bg-white/60' : 'border-transparent text-slate-500 hover:bg-white/40 hover:text-slate-700'}`}
+            >
+              <tab.icon size={16} className="mr-2" /> {tab.label}
+            </button>
+          ))}
+        </div>
 
-              {/* Copy-Paste Friendly Text Block */}
-              <div className="pt-4 border-t border-slate-300/50 relative">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-xs font-bold uppercase text-slate-400">Unit Details (Copy)</h4>
-                  <button
-                    onClick={() => {
-                      // Fallback for non-secure contexts (HTTP)
-                      if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(txtContent).then(() => alert("Copied!"));
-                      } else {
-                        const textArea = document.createElement("textarea");
-                        textArea.value = txtContent;
-                        textArea.style.position = "fixed";
-                        textArea.style.left = "-9999px";
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
-                        try {
-                          document.execCommand('copy');
-                          alert("Copied!");
-                        } catch (err) {
-                          alert("Failed to copy. Please select text manually.");
-                        }
-                        document.body.removeChild(textArea);
+        {/* Content */}
+        <div className="overflow-y-auto p-4 md:p-8 flex-1 bg-slate-50/30">
+          {/* OVERVIEW TAB */}
+          {activeTab === 'overview' && (
+            isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Section title="Identity" icon={<Building size={18} />}>
+                  <Input label="Unit No" value={formData.unit_no} onChange={v => handleChange('unit_no', v)} />
+                  <Input label="Area (sqm)" type="number" value={formData.area_sqm} onChange={v => handleChange('area_sqm', v)} />
+                  <Input label="Status" type="select" options={['vacant', 'occupied', 'reserved']} value={formData.status} onChange={v => handleChange('status', v)} />
+                </Section>
+                <Section title="Tenant Details" icon={<User size={18} />}>
+                  <Input label="Shop Name" value={formData.tenant_name} onChange={v => handleChange('tenant_name', v)} />
+                  <Input label="PIC" value={formData.person_in_charge} onChange={v => handleChange('person_in_charge', v)} />
+                  <Input label="Email" value={formData.contact_email} onChange={v => handleChange('contact_email', v)} />
+                  <Input label="Phone" value={formData.contact_phone} onChange={v => handleChange('contact_phone', v)} />
+                </Section>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <div className="neu-card p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <DetailItem label="Status" value={<StatusBadge status={unit.status} />} />
+                  <DetailItem label="Tenant" value={unit.tenant_name || '-'} />
+                  <DetailItem label="PIC" value={unit.person_in_charge || '-'} />
+                  <DetailItem label="Contact" value={unit.contact_phone || '-'} />
+                </div>
+                <div className="neu-card p-6">
+                  <h3 className="font-bold text-indigo-500 mb-4 flex items-center text-sm uppercase tracking-wider"><Building size={16} className="mr-2" /> Property Info</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <SpecRow label="Property" value={mall?.name || 'Unknown'} />
+                    <SpecRow label="Level" value={`L${unit.level}`} />
+                    <SpecRow label="Unit No" value={unit.unit_no} />
+                    <SpecRow label="Area (sqm)" value={unit.area_sqm} />
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* SPECS & M&E TAB */}
+          {activeTab === 'specs' && (
+            isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Section title="Water & Plumbing" icon={<Droplet size={18} />}>
+                  <Toggle label="Water Point" value={formData.water_point} onChange={v => handleChange('water_point', v)} />
+                  {formData.water_point && <Input label="Pipe Diameter" value={formData.water_pipe_diameter} onChange={v => handleChange('water_pipe_diameter', v)} />}
+                  <Input label="Floor Traps" type="number" value={formData.floor_traps} onChange={v => handleChange('floor_traps', v)} />
+                </Section>
+                <Section title="Gas Distribution" icon={<Activity size={18} />}>
+                  <Toggle label="Gas Pipe" value={formData.gas_pipe} onChange={v => handleChange('gas_pipe', v)} />
+                </Section>
+              </div>
+            ) : (
+              <div className="neu-card p-6">
+                <h3 className="font-bold text-indigo-500 mb-4 flex items-center text-sm uppercase tracking-wider"><Droplet size={16} className="mr-2" /> Mechanical & Plumbing</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SpecRow label="Water Point" value={unit.water_point ? 'Yes' : 'No'} sub={unit.water_point ? unit.water_pipe_diameter : null} />
+                  <SpecRow label="Floor Traps" value={unit.floor_traps || '0'} />
+                  <SpecRow label="Gas Pipe" value={unit.gas_pipe ? 'Yes' : 'No'} />
+                </div>
+              </div>
+            )
+          )}
+
+          {/* ELECTRICAL TAB */}
+          {activeTab === 'electricity' && (
+            isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Section title="Power Supply" icon={<Zap size={18} />}>
+                  <Input label="AC Power (kW)" type="number" value={formData.ac_power_kw} onChange={v => handleChange('ac_power_kw', v)} />
+                  <Input label="Isolator (TPN)" value={formData.electric_isolator_tpn_val} onChange={v => handleChange('electric_isolator_tpn_val', v)} />
+                </Section>
+                <Section title="Cooling" icon={<Wind size={18} />}>
+                  <Input label="FCU Units" type="number" value={formData.fcu_units} onChange={v => handleChange('fcu_units', v)} />
+                </Section>
+              </div>
+            ) : (
+              <div className="neu-card p-6">
+                <h3 className="font-bold text-indigo-500 mb-4 flex items-center text-sm uppercase tracking-wider"><Zap size={16} className="mr-2" /> Electrical & Cooling</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SpecRow label="AC Power Limit" value={`${unit.ac_power_kw || 0} kW`} />
+                  <SpecRow label="TPN Isolator" value={unit.electric_isolator_tpn_val || 'None'} />
+                  <SpecRow label="FCU Units" value={unit.fcu_units || '0'} />
+                </div>
+              </div>
+            )
+          )}
+
+          {/* SAFETY & COMMS TAB */}
+          {activeTab === 'safety' && (
+            isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Section title="Safety Systems" icon={<Shield size={18} />}>
+                  <Input label="Emerg. Lights" type="number" value={formData.emergency_lights} onChange={v => handleChange('emergency_lights', v)} />
+                  <Input label="Sprinklers" type="number" value={formData.sprinkler} onChange={v => handleChange('sprinkler', v)} />
+                  <Input label="PA Speakers" type="number" value={formData.pa_speaker} onChange={v => handleChange('pa_speaker', v)} />
+                </Section>
+                <Section title="Communications" icon={<Wifi size={18} />}>
+                  <Input label="Fibre Ports" type="number" value={formData.fibre_port} onChange={v => handleChange('fibre_port', v)} />
+                  <Input label="Data Ports" type="number" value={formData.data_ports} onChange={v => handleChange('data_ports', v)} />
+                </Section>
+              </div>
+            ) : (
+              <div className="neu-card p-6">
+                <h3 className="font-bold text-indigo-500 mb-4 flex items-center text-sm uppercase tracking-wider"><Shield size={16} className="mr-2" /> Safety & Communications</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SpecRow label="Emergency Lights" value={unit.emergency_lights || '0'} />
+                  <SpecRow label="Exit Signage" value={unit.exit_signage || '0'} />
+                  <SpecRow label="Sprinklers" value={unit.sprinkler || '0'} />
+                  <SpecRow label="PA Speakers" value={unit.pa_speaker || '0'} />
+                  <SpecRow label="Fibre Ports" value={unit.fibre_port || '0'} />
+                  <SpecRow label="Data Ports" value={unit.data_ports || '0'} />
+                </div>
+              </div>
+            )
+          )}
+
+          {/* KITCHEN TAB */}
+          {activeTab === 'kitchen' && (
+            isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Section title="Exhaust & Fresh Air" icon={<Wind size={18} />}>
+                  <Toggle label="Kitchen Exhaust (EA)" value={formData.kitchen_ea} onChange={v => handleChange('kitchen_ea', v)} />
+                  {formData.kitchen_ea && <Input label="EA Value/Capacity" value={formData.kitchen_ea_val} onChange={v => handleChange('kitchen_ea_val', v)} />}
+                  <div className="mt-4"></div>
+                  <Toggle label="Kitchen Fresh Air (FA)" value={formData.kitchen_fa} onChange={v => handleChange('kitchen_fa', v)} />
+                  {formData.kitchen_fa && <Input label="FA Value/Capacity" value={formData.kitchen_fa_val} onChange={v => handleChange('kitchen_fa_val', v)} />}
+                </Section>
+              </div>
+            ) : (
+              <div className="neu-card p-6">
+                <h3 className="font-bold text-indigo-500 mb-4 flex items-center text-sm uppercase tracking-wider"><Wind size={16} className="mr-2" /> Kitchen Ventilation</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SpecRow label="Kitchen Exhaust (EA)" value={unit.kitchen_ea ? 'Available' : 'No'} sub={unit.kitchen_ea ? unit.kitchen_ea_val : null} />
+                  <SpecRow label="Kitchen Fresh Air (FA)" value={unit.kitchen_fa ? 'Available' : 'No'} sub={unit.kitchen_fa ? unit.kitchen_fa_val : null} />
+                </div>
+              </div>
+            )
+          )}
+
+          {/* EXPORT TAB */}
+          {activeTab === 'export' && (
+            <div className="max-w-3xl mx-auto space-y-4">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-bold uppercase text-slate-500 tracking-wider">Plain Text Export</h4>
+                <button
+                  onClick={() => {
+                    if (navigator.clipboard && window.isSecureContext) {
+                      navigator.clipboard.writeText(txtContent).then(() => alert("Copied!"));
+                    } else {
+                      const textArea = document.createElement("textarea");
+                      textArea.value = txtContent;
+                      textArea.style.position = "fixed";
+                      textArea.style.left = "-9999px";
+                      document.body.appendChild(textArea);
+                      textArea.focus();
+                      textArea.select();
+                      try {
+                        document.execCommand('copy');
+                        alert("Copied!");
+                      } catch (err) {
+                        alert("Failed to copy. Please select text manually.");
                       }
-                    }}
-                    className="text-xs font-bold text-indigo-500 hover:text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded transition-colors"
-                  >
-                    Click to Copy
-                  </button>
-                </div>
-                <div className="neu-input w-full font-mono text-xs whitespace-pre p-4 h-48 overflow-y-auto select-all text-slate-600 bg-slate-200/50 border border-slate-300/50">
-                  {txtContent}
-                </div>
+                      document.body.removeChild(textArea);
+                    }
+                  }}
+                  className="neu-btn neu-btn-primary px-4 py-2 text-sm"
+                >
+                  Copy to Clipboard
+                </button>
+              </div>
+              <div className="neu-input w-full font-mono text-xs whitespace-pre p-6 h-[400px] overflow-y-auto select-all text-slate-600 bg-white shadow-inner border border-slate-200 rounded-xl">
+                {txtContent}
               </div>
             </div>
           )}
@@ -1630,7 +1728,7 @@ Kit. Fresh:${formData.kitchen_fa ? `Yes (${formData.kitchen_fa_val})` : 'No'}`;
         {isEditing && (
           <div className="p-6 border-t border-slate-300/50 flex justify-between bg-white/30">
             <div>
-              {!unit.isNew && user.role === 'admin' && (
+              {!unit.isNew && ['admin', 'director'].includes(user.role) && (
                 <button onClick={() => { if (window.confirm('Delete?')) { onDelete(unit.id); onClose(); } }} className="neu-btn px-4 py-2 text-red-500">
                   <Trash2 size={16} className="mr-2" /> Delete
                 </button>
@@ -1683,8 +1781,8 @@ function DocumentPanel({ user, docs, malls, onAddDoc, onDeleteDoc }) {
     <div className="animate-in slide-in-from-bottom-8 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-700 tracking-tight">Documents</h1>
-          <p className="text-slate-500 mt-2">Manage and share marketing collateral.</p>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Documents</h1>
+          <p className="text-slate-500 font-medium mt-2">Manage and share marketing collateral.</p>
         </div>
         {user.role !== 'agent' && (
           <button onClick={() => setIsAdding(!isAdding)} className="neu-btn neu-btn-primary px-6 py-3 w-full md:w-auto">
@@ -1761,7 +1859,7 @@ function DocumentPanel({ user, docs, malls, onAddDoc, onDeleteDoc }) {
                               <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
                                 {doc.file_url.endsWith('.pdf') ? <FileText size={16} /> : <Image size={16} />}
                               </div>
-                              {user.role === 'admin' && (
+                              {['admin', 'director'].includes(user.role) && (
                                 <button onClick={() => onDeleteDoc(doc.id)} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                               )}
                             </div>
@@ -1812,7 +1910,7 @@ function DocList({ title, type, docs, user, onDelete, color, icon }) {
               <a href={`${API_URL}${doc.file_url}`} target="_blank" rel="noreferrer" className="neu-btn w-8 h-8 flex items-center justify-center">
                 <Download size={14} />
               </a>
-              {user.role === 'admin' && (
+              {['admin', 'director'].includes(user.role) && (
                 <button onClick={() => onDelete(doc.id)} className="neu-btn w-8 h-8 text-red-500">
                   <Trash2 size={14} />
                 </button>
@@ -1900,7 +1998,7 @@ function UserManagement({ currentUser, users, onAddUser, onDeleteUser, onChangeP
   // If user is Staff/Agent, only show themselves (which should be in users list if passed correctly or check currentUser)
   // For Staff/Agent, they just want to change their own password.
   // We can simplify the UI for non-admins.
-  const isAdmin = currentUser.role === 'admin';
+  const isAdmin = ['admin', 'director'].includes(currentUser.role);
 
   if (!isAdmin) {
     return (
@@ -1930,8 +2028,8 @@ function UserManagement({ currentUser, users, onAddUser, onDeleteUser, onChangeP
     <div className="animate-in slide-in-from-bottom-8 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-700 tracking-tight">User Management</h1>
-          <p className="text-slate-500 mt-2">Control system access and roles.</p>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">User Management</h1>
+          <p className="text-slate-500 font-medium mt-2">Control system access and roles.</p>
         </div>
         <button onClick={() => setIsAdding(!isAdding)} className="neu-btn neu-btn-primary px-6 py-3 w-full md:w-auto">
           {isAdding ? <X size={20} className="mr-2" /> : <Plus size={20} className="mr-2" />}
@@ -1965,6 +2063,7 @@ function UserManagement({ currentUser, users, onAddUser, onDeleteUser, onChangeP
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1 ml-1">Role</label>
                 <select className="neu-input w-full" value={newRole} onChange={e => setNewRole(e.target.value)}>
                   <option value="staff">Staff</option>
+                  <option value="director">Director</option>
                   <option value="admin">Admin</option>
                   <option value="agent">Agent</option>
                 </select>
@@ -1980,7 +2079,7 @@ function UserManagement({ currentUser, users, onAddUser, onDeleteUser, onChangeP
           <div key={u.id} className="neu-card p-6 flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
               <Avatar user={u} size="md" />
-              {u.email !== 'admin@pancatz.com' && u.email !== 'sudo@pancatz.com' && u.id !== currentUser.id && (
+              {u.email !== 'admin@pancatz.com' && u.id !== currentUser.id && (
                 <button onClick={() => onDeleteUser(u.id)} className="text-slate-300 hover:text-red-500">
                   <Trash2 size={18} />
                 </button>
@@ -1989,7 +2088,7 @@ function UserManagement({ currentUser, users, onAddUser, onDeleteUser, onChangeP
             <div>
               <h3 className="text-lg font-bold text-slate-700">{u.firstName || (u.email ? u.email.split('@')[0] : 'User')} {u.lastName || ''}</h3>
               <p className="text-xs text-slate-400 truncate">{u.email}</p>
-              <span className={`inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-500'}`}>
+              <span className={`inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${['admin', 'director'].includes(u.role) ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-500'}`}>
                 {u.role}
               </span>
             </div>
@@ -2040,8 +2139,8 @@ function ContactsPanel({ user, contacts, onAdd, onDelete }) {
     <div className="animate-in slide-in-from-bottom-8 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-700 tracking-tight">Contacts</h1>
-          <p className="text-slate-500 mt-2">Directory of tenants, agents, and vendors.</p>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Contacts</h1>
+          <p className="text-slate-500 font-medium mt-2">Directory of tenants, agents, and vendors.</p>
         </div>
         <button onClick={() => setIsAdding(!isAdding)} className="neu-btn neu-btn-primary px-6 py-3 w-full md:w-auto">
           {isAdding ? <X size={20} className="mr-2" /> : <Plus size={20} className="mr-2" />}

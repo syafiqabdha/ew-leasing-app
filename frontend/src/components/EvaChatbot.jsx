@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Bot, User, MessageSquare } from 'lucide-react';
+import { X, Send, User, MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+
+const FemaleAvatar = ({ size = 20, className = "" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {/* AI sparkle */}
+        <path d="M19 2l.5 1.5 1.5.5-1.5.5L19 6l-.5-1.5L17 4l1.5-.5z" />
+        {/* Face */}
+        <circle cx="12" cy="10" r="4" />
+        {/* Feminine hair — curved arc over head */}
+        <path d="M8.5 8C9 5.2 10.4 4 12 4s3 1.2 3.5 4" />
+        {/* Shoulders / body */}
+        <path d="M6 21v-1a6 6 0 0 1 12 0v1" />
+    </svg>
+);
 
 export default function EvaChatbot({ user, malls, units }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -119,7 +132,7 @@ export default function EvaChatbot({ user, malls, units }) {
                 {/* Avatar - Assistant */}
                 {!isUser && (
                     <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center mr-2 shrink-0 shadow-sm mt-1">
-                        <Bot size={16} className="text-slate-600" />
+                        <FemaleAvatar size={16} className="text-slate-600" />
                     </div>
                 )}
 
@@ -169,17 +182,17 @@ export default function EvaChatbot({ user, malls, units }) {
     };
 
     return (
-        <div className="fixed bottom-0 right-0 z-50 pointer-events-none p-4 w-full md:w-auto flex flex-col items-end">
+        <div className="fixed bottom-6 right-6 z-40 pointer-events-none w-full md:w-auto flex flex-col items-end filter drop-shadow-xl">
 
             {/* Chat Window */}
             {isOpen && (
-                <div className="pointer-events-auto w-full md:w-[400px] bg-[#F9FAFB] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 mb-4 font-sans animate-in slide-in-from-bottom-10 zoom-in-95 duration-300 h-[600px] max-h-[80vh]">
+                <div className="pointer-events-auto w-[calc(100vw-3rem)] md:w-[400px] bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/40 mb-4 font-sans animate-in slide-in-from-bottom-10 zoom-in-95 duration-400 ease-out h-[600px] max-h-[75vh]">
 
                     {/* Header */}
-                    <div className="bg-white border-b border-slate-100 p-4 flex justify-between items-center shadow-sm z-10">
+                    <div className="bg-white/60 backdrop-blur-md border-b border-white/20 p-4 flex justify-between items-center shadow-sm z-10 shrink-0">
                         <div className="flex items-center">
                             <div className="w-10 h-10 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                                <Bot size={20} className="text-white" />
+                                <FemaleAvatar size={20} className="text-white" />
                             </div>
                             <div className="ml-3">
                                 <h3 className="font-bold text-slate-800 text-sm">Eva AI Assistant</h3>
@@ -208,7 +221,7 @@ export default function EvaChatbot({ user, malls, units }) {
                         {isTyping && (
                             <div className="flex items-end mb-4 animate-in fade-in duration-300">
                                 <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center mr-2 shrink-0">
-                                    <Bot size={16} className="text-slate-600" />
+                                    <FemaleAvatar size={16} className="text-slate-600" />
                                 </div>
                                 <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center space-x-1">
                                     <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -257,11 +270,11 @@ export default function EvaChatbot({ user, malls, units }) {
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="pointer-events-auto bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-4 rounded-full shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center mb-2 mr-2 group"
+                    className="pointer-events-auto bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-4 rounded-full shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 hover:scale-105 transition-all duration-300 flex items-center justify-center group opacity-80 hover:opacity-100 hover:ring-4 ring-indigo-500/20"
                     aria-label="Open chat"
                 >
                     <MessageSquare size={24} className="fill-current" />
-                    <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap ml-0 group-hover:ml-3 font-semibold">
+                    <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap ml-0 group-hover:ml-3 font-semibold tracking-wide">
                         Ask Eva
                     </span>
                 </button>

@@ -36,7 +36,7 @@ Review the changes applied to your frontend below. The application routing has a
 
 ### Manual Testing
 
-* Log in with `sudo@pancatz.com` and your existing user password.
+* Log in with `admin@pancatz.com` and your existing user password.
 * Try going to the "Users" tab and use the new UI row to upload an avatar.
 * Check the terminal output to see the `sharp` logging confirm resizing.
 * Give it a go and let me know if you would like any further text or visual adjustments!

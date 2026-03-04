@@ -11,7 +11,7 @@ The **Engwah Leasing Portal** is an enterprise-grade Property Management System 
 
 *   **Centralized Truth & Document Intelligence**: A single source of truth for all Malls, Units, Tenants, and Contracts. Integrates uploaded Sales Kits and Floor Plans.
 *   **Expert AI Analysis (Eva)**: Context-augmented AI providing detailed technical breakdowns in rich-text format.
-*   **Enhanced Security & Governance**: Role-Based Access Control (Sudo, Admin, Staff, Agent), rate limiting for AI (50 req/hr), and chat audit logs.
+*   **Enhanced Security & Governance**: Role-Based Access Control (Director, Admin, Staff, Agent), rate limiting for AI (50 req/hr), and chat audit logs.
 *   **Zero-Maintenance Infrastructure**: Built on Docker containerization with secure networking via Tailscale.
 
 ## Technology Stack
@@ -30,12 +30,12 @@ The **Engwah Leasing Portal** is an enterprise-grade Property Management System 
 
 ### Logging In
 1. Enter assigned **Username** and **Password**.
-2. **Super Admin (Sudo)**: `sudo` / `password` (For critical system changes)
+2. **Director**: `admin@pancatz.com` (For system changes/executive oversight)
 3. **Default Admin**: `admin` / `admin` (Change immediately)
 
 ## User Roles
 
-*   **Sudo (Super Admin)**: Full system control, Database mutations, Emergency access.
+*   **Director (Board Member)**: Full system control, Database mutations, Executive access.
 *   **Admin**: User management, Property management.
 *   **Staff**: Operational access (Edit units, Upload docs).
 *   **Agent**: Read-only access to availability and specs.

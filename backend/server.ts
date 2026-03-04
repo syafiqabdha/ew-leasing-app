@@ -18,13 +18,16 @@ app.use(cors());
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- LLM CONFIGURATION ---
-const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://ollama:11434';
-const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY || '';
-const LLM_MODEL = process.env.LLM_MODEL || 'qwen2.5:1.5b';
+const OLLAMA_HOST = process.env.OLLAMA_HOST || 'https://ollama.com/api';
+const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY || '6914c375ebf2431cbdecfcbe2374974a.WWEsVKuLP_pKFnaaTuIadMLH';
+const LLM_MODEL = process.env.LLM_MODEL || 'deepseek-v3.1:671b-cloud';
 
 const ensureModel = async () => {
     try {
-        const response = await fetch(`${OLLAMA_HOST}/api/tags`);
+        const headers: any = {};
+        if (OLLAMA_API_KEY) headers['Authorization'] = `Bearer ${OLLAMA_API_KEY}`;
+
+        const response = await fetch(`${OLLAMA_HOST}/api/tags`, { headers });
         if (response.ok) {
             const data: any = await response.json();
             const hasModel = data.models.some((m: any) => m.name.includes(LLM_MODEL));
@@ -32,14 +35,17 @@ const ensureModel = async () => {
                 console.log(`Model ${LLM_MODEL} not found. Triggering pull...`);
                 await fetch(`${OLLAMA_HOST}/api/pull`, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...headers },
                     body: JSON.stringify({ name: LLM_MODEL })
                 });
             } else {
                 console.log(`LLM Model ${LLM_MODEL} is ready.`);
             }
+        } else {
+            console.log(`Failed to fetch models: ${response.status} ${response.statusText}`);
         }
-    } catch (e) {
-        console.log("Ollama not reachable yet (normal during startup).");
+    } catch (e: any) {
+        console.log(`Ollama not reachable: ${e.message}`);
     }
 };
 setTimeout(ensureModel, 5000);
@@ -220,7 +226,7 @@ app.post('/api/login', async (req: Request, res: Response) => {
 });
 
 app.get('/api/users', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         const rows = await db.select({
             id: users.id,
@@ -238,7 +244,7 @@ app.get('/api/users', authenticateToken, async (req: AuthRequest, res: Response)
 });
 
 app.post('/api/users', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     const { email, password, role, firstName, lastName } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -250,7 +256,7 @@ app.post('/api/users', authenticateToken, async (req: AuthRequest, res: Response
 });
 
 app.delete('/api/users/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         await db.delete(users).where(eq(users.id, parseInt(req.params.id)));
         res.json({ success: true });
@@ -260,7 +266,7 @@ app.delete('/api/users/:id', authenticateToken, async (req: AuthRequest, res: Re
 });
 
 app.put('/api/users/:id/password', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin' && req.user.id !== parseInt(req.params.id)) return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role) && req.user.id !== parseInt(req.params.id)) return res.status(403).json({ error: 'Access denied' });
     const { password } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -334,7 +340,7 @@ app.get('/api/users/status', authenticateToken, async (req: AuthRequest, res: Re
 
 // --- CONTACTS ---
 app.get('/api/contacts', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (['admin', 'staff'].indexOf(req.user.role) === -1) return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director', 'staff'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         const rows = await db.select().from(contacts).orderBy(desc(contacts.createdAt));
         res.json(rows);
@@ -344,7 +350,7 @@ app.get('/api/contacts', authenticateToken, async (req: AuthRequest, res: Respon
 });
 
 app.post('/api/contacts', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (['admin', 'staff'].indexOf(req.user.role) === -1) return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director', 'staff'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     const { name, email, phone, company, type, remark } = req.body;
     try {
         const [result] = await db.insert(contacts)
@@ -357,7 +363,7 @@ app.post('/api/contacts', authenticateToken, async (req: AuthRequest, res: Respo
 });
 
 app.delete('/api/contacts/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (['admin', 'staff'].indexOf(req.user.role) === -1) return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director', 'staff'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         await db.delete(contacts).where(eq(contacts.id, parseInt(req.params.id)));
         res.json({ success: true });
@@ -378,7 +384,7 @@ app.get('/api/malls', authenticateToken, async (req: AuthRequest, res: Response)
 });
 
 app.post('/api/malls', authenticateToken, upload.single('image'), async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     const { name, location, slug } = req.body;
     let imageUrl = null;
     if (req.file) imageUrl = `/uploads/malls/${req.file.filename}`;
@@ -398,7 +404,6 @@ app.post('/api/malls', authenticateToken, upload.single('image'), async (req: Au
             });
             res.json({ success: true, id: newMallId, image_url: imageUrl });
         });
-        refreshEvaContext();
     } catch (err: any) {
         if (req.file) fs.unlink(path.join(__dirname, 'uploads/malls', req.file.filename), () => { });
         res.status(500).json({ error: err.message });
@@ -406,7 +411,7 @@ app.post('/api/malls', authenticateToken, upload.single('image'), async (req: Au
 });
 
 app.put('/api/malls/:id', authenticateToken, upload.single('image'), async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     const { name, location, slug } = req.body;
     const mallId = parseInt(req.params.id);
 
@@ -422,7 +427,7 @@ app.put('/api/malls/:id', authenticateToken, upload.single('image'), async (req:
 });
 
 app.put('/api/malls/:id/levels', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     const { levels } = req.body;
     const mallId = parseInt(req.params.id);
 
@@ -439,7 +444,7 @@ app.put('/api/malls/:id/levels', authenticateToken, async (req: AuthRequest, res
 });
 
 app.delete('/api/malls/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         await db.delete(malls).where(eq(malls.id, parseInt(req.params.id)));
         res.json({ success: true });
@@ -517,7 +522,6 @@ app.put('/api/units/:id', authenticateToken, async (req: AuthRequest, res: Respo
 
     try {
         await db.update(units).set(toCamelKeys(cleanData)).where(eq(units.id, id));
-        refreshEvaContext();
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -525,7 +529,7 @@ app.put('/api/units/:id', authenticateToken, async (req: AuthRequest, res: Respo
 });
 
 app.post('/api/units', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     const data = req.body;
     const cleanData = { ...data };
     delete cleanData.id;
@@ -533,7 +537,6 @@ app.post('/api/units', authenticateToken, async (req: AuthRequest, res: Response
 
     try {
         await db.insert(units).values(toCamelKeys(cleanData));
-        refreshEvaContext();
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -541,10 +544,9 @@ app.post('/api/units', authenticateToken, async (req: AuthRequest, res: Response
 });
 
 app.delete('/api/units/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         await db.delete(units).where(eq(units.id, parseInt(req.params.id)));
-        refreshEvaContext();
         res.json({ success: true });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -562,7 +564,7 @@ app.get('/api/documents', authenticateToken, async (req: AuthRequest, res: Respo
 });
 
 app.post('/api/documents', authenticateToken, upload.single('file'), async (req: AuthRequest, res: Response) => {
-    if (['admin', 'staff'].indexOf(req.user.role) === -1) return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director', 'staff'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     if (!req.file) return res.status(400).json({ error: 'No file' });
     const { title, mall_id, type } = req.body;
 
@@ -578,7 +580,7 @@ app.post('/api/documents', authenticateToken, upload.single('file'), async (req:
 });
 
 app.delete('/api/documents/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         const rows = await db.select({ fileUrl: salesKits.fileUrl }).from(salesKits).where(eq(salesKits.id, parseInt(req.params.id)));
         if (rows.length > 0) {
@@ -597,7 +599,7 @@ app.delete('/api/documents/:id', authenticateToken, async (req: AuthRequest, res
 });
 
 app.post('/api/malls/:id/image', authenticateToken, upload.single('image'), async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     if (!req.file) return res.status(400).json({ error: 'No image' });
     const fileUrl = `/uploads/malls/${req.file.filename}`;
     try {
@@ -619,7 +621,7 @@ app.get('/api/announcements', authenticateToken, async (req: AuthRequest, res: R
 });
 
 app.post('/api/announcements', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (['admin', 'staff'].indexOf(req.user.role) === -1) return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director', 'staff'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     const { title, description, expiry_date, target_property } = req.body;
 
     try {
@@ -641,7 +643,7 @@ app.post('/api/announcements', authenticateToken, async (req: AuthRequest, res: 
 });
 
 app.delete('/api/announcements/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+    if (!['admin', 'director'].includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
     try {
         await db.delete(announcements).where(eq(announcements.id, parseInt(req.params.id)));
         res.json({ success: true });
@@ -694,7 +696,7 @@ app.delete('/api/dashboard/notes/:id', authenticateToken, async (req: AuthReques
     try {
         const rows = await db.select().from(dashboardNotes).where(eq(dashboardNotes.id, noteId));
         if (rows.length === 0) return res.status(404).json({ error: 'Note not found' });
-        if (req.user.role !== 'admin' && rows[0].userId !== req.user.id) {
+        if (!['admin', 'director'].includes(req.user.role) && rows[0].userId !== req.user.id) {
             return res.status(403).json({ error: 'Access denied' });
         }
         await db.delete(dashboardNotes).where(eq(dashboardNotes.id, noteId));
@@ -716,6 +718,7 @@ const refreshEvaContext = async () => {
         const cont = await db.select().from(contacts);
         const docs = await db.select().from(salesKits);
         const notifs = await db.select().from(announcements).orderBy(desc(announcements.createdAt)).limit(10);
+        const notes = await db.select().from(dashboardNotes).orderBy(desc(dashboardNotes.createdAt)).limit(10);
 
         const mallContext = m.map(mall => {
             const mUnits = u.filter(ui => ui.mallId === mall.id);
@@ -731,29 +734,39 @@ const refreshEvaContext = async () => {
                 units_detail: mUnits.map(ui => ({
                     unit_no: ui.unitNo, level: ui.level, status: ui.status, area_sqm: ui.areaSqm,
                     occupant: ui.status === 'occupied' ? (ui.tenantName || 'Occupied') : null,
-                    specs: {
-                        fcu_count: ui.fcuUnits,
-                        power_supply: `${ui.acPowerKw} kW (${ui.electricIsolatorTpnVal || 'N/A'})`,
-                        water_supply: ui.waterPoint ? `Yes (Pipe: ${ui.waterPipeDiameter || 'Std'})` : 'No',
-                        drainage: `${ui.floorTraps} Floor Traps`,
-                        exhaust_air: ui.kitchenEa ? `Yes (${ui.kitchenEaVal})` : 'No',
-                        fresh_air: ui.kitchenFa ? `Yes (${ui.kitchenFaVal})` : 'No',
-                        gas: ui.gasPipe ? 'Yes' : 'No',
-                        fire_safety: `Sprinklers: ${ui.sprinkler}, Exit Signs: ${ui.exitSignage}, Emerg. Lights: ${ui.emergencyLights}`,
-                        connectivity: `Fibre: ${ui.fibrePort}, Data: ${ui.dataPorts}`
+                    SPECIFICATIONS: {
+                        "Water Pt": ui.waterPoint ? `Yes (${ui.waterPipeDiameter || ''})` : 'No',
+                        "AC Power": `${ui.acPowerKw} kW`,
+                        "FCU Units": ui.fcuUnits,
+                        "Isolator": ui.electricIsolatorTpnVal || '',
+                        "Floor Trap": ui.floorTraps,
+                        "Gas Pipe": ui.gasPipe ? 'Yes' : 'No'
+                    },
+                    "SAFETY & COMMS": {
+                        "Lights": ui.emergencyLights,
+                        "Signage": ui.exitSignage,
+                        "Sprinklers": ui.sprinkler,
+                        "Fibre": ui.fibrePort,
+                        "Data": ui.dataPorts,
+                        "Kit. Exh": ui.kitchenEa ? 'Yes' : 'No',
+                        "Kit. Fresh": ui.kitchenFa ? 'Yes' : 'No'
                     }
                 }))
             };
         });
 
         const appContext = {
-            identity: { name: "Eva", role: "Senior Commercial Leasing Analyst & PMS Specialist", model: LLM_MODEL, instructions: "Provide expert-level insights on property management, utilizing precise technical terminology." },
+            identity: { name: "Eva", role: "Senior Commercial Leasing Analyst & PMS Specialist", model: LLM_MODEL, instructions: "Provide expert-level insights on property management, utilizing precise technical terminology. When referring to unit details, you MUST base your response EXACTLY on the provided SPECIFICATIONS and SAFETY & COMMS blocks from the database without hallucinating." },
             contacts_directory: cont,
             app_name: "Engwah Leasing System",
             architecture: { frontend: "React (Vite) running on Port 3000", backend: "Node.js (Express) running on Port 5000", database: "PostgreSQL (pgvector & Drizzle)", ai_engine: `Ollama (${LLM_MODEL})`, containerization: "Docker Compose" },
             schema_definitions: { "unit_model": "The design type", "fcu_units": "Fan Coil Units", "status": "Lease Status: 'Vacant', 'Occupied', 'Reserved'" },
             registered_users: usrs.length,
-            user_list_summary: usrs.map(u => ({ name: u.email, role: u.role }))
+            user_list_summary: usrs.map(u => ({ name: u.email, role: u.role })),
+            recent_activities: {
+                system_notifications: notifs.map(n => ({ title: n.title, date: n.createdAt, target: n.targetProperty })),
+                calendar_notes: notes.map(n => ({ content: n.content, author_id: n.userId, date: n.targetDate }))
+            }
         };
 
         cachedEvaContext = JSON.stringify({ properties: mallContext, system_knowledge: appContext }, null, 2);
@@ -780,6 +793,20 @@ app.post('/api/chat', authenticateToken, async (req: AuthRequest, res: Response)
 
     if (message.toLowerCase() === 'logout' || message.toLowerCase() === 'close') {
         return res.json({ response: "Logging you out now. Have a great day!", action: "logout" });
+    }
+
+    if (message.trim().toLowerCase() === '\\refresh') {
+        await refreshEvaContext();
+        return res.json({ response: `Thank you ${req.user.firstName || req.user.email.split('@')[0]}, my memory refresh` });
+    }
+
+    const commandMatch = message.match(/^\\(add|remove|change)\b/i);
+    if (commandMatch) {
+        if (['admin', 'director'].includes(req.user.role)) {
+            return res.json({ response: `Command acknowledged. However, as an AI, I only possess read-only views of the database to prevent accidental corruption. Please navigate to the Dashboard to ${commandMatch[1].toLowerCase()} data manually.` });
+        } else {
+            return res.json({ response: `I am sorry, but your current role (${req.user.role}) is unauthorized to execute data mutation commands.` });
+        }
     }
 
     try {

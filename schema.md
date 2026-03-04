@@ -13,7 +13,7 @@ System and agent users mapping with RBAC definition.
 - **`id`** (SERIAL, PK)
 - **`username`** (VARCHAR 50, UNIQUE)
 - **`password_hash`** (VARCHAR 255)
-- **`role`** (VARCHAR 50): Restricts privileges. Allowed values: `admin`, `staff`, `agent`, `sudo`.
+- **`role`** (VARCHAR 50): Restricts privileges. Allowed values: `director`, `admin`, `staff`, `agent`.
 
 ### `malls`
 The canonical entity representing physical shopping malls/properties.

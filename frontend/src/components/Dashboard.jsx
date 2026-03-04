@@ -6,10 +6,52 @@ import {
 import {
     Plus, Trash2, Building, LayoutGrid, Activity,
     Settings, User, FileText, Search, AlertTriangle, Menu, X, Check,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, Users, ChevronDown
 } from 'lucide-react';
 
 const API_URL = '/api';
+
+const CollapsibleWidget = ({ title, icon, children, headerRight, defaultExpanded = true, contentClassName = "", className = "" }) => {
+    const [expanded, setExpanded] = useState(defaultExpanded);
+    return (
+        <div className={`glass-card flex flex-col transition-all duration-300 overflow-hidden ${className}`}>
+            <div
+                className={`p-5 md:p-6 flex justify-between items-center cursor-pointer select-none transition-colors hover:bg-white/10 ${expanded ? 'border-b border-white/20' : ''}`}
+                onClick={(e) => {
+                    if (e.target.closest('.no-collapse')) return;
+                    setExpanded(!expanded);
+                }}
+            >
+                <div className="flex items-center gap-3 w-full overflow-hidden">
+                    {icon && (
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner shrink-0">
+                            {icon}
+                        </div>
+                    )}
+                    {typeof title === 'string' ? <h3 className="text-lg font-bold text-slate-700 truncate">{title}</h3> : title}
+                </div>
+                <div className="flex flex-1 items-center justify-end gap-3 pl-2">
+                    {headerRight && <div className="no-collapse flex items-center">{headerRight}</div>}
+                    <div className={`p-1.5 rounded-lg bg-white/50 text-slate-400 transition-transform duration-300 shrink-0 ${expanded ? 'rotate-180' : ''}`}>
+                        <ChevronDown size={18} />
+                    </div>
+                </div>
+            </div>
+            <div
+                className={`transition-all duration-500 ease-in-out`}
+                style={{
+                    maxHeight: expanded ? '2500px' : '0px',
+                    opacity: expanded ? 1 : 0,
+                    overflow: 'visible'
+                }}
+            >
+                <div className={`p-5 md:p-6 ${contentClassName}`}>
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const COLORS = ['#6d5dfc', '#ff6b6b', '#48bb78', '#f6ad55', '#4fd1c5', '#9f7aea'];
 
@@ -43,6 +85,7 @@ export default function Dashboard({ user, malls, units }) {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [noteContent, setNoteContent] = useState('');
     const [userStatus, setUserStatus] = useState({ online: [], offline: [] });
+    const [showNotesPanel, setShowNotesPanel] = useState(false);
 
     useEffect(() => {
         fetchNotes();
@@ -231,14 +274,17 @@ export default function Dashboard({ user, malls, units }) {
             {/* PROPERTY PERFORMANCE CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {chartData.map((mallData) => (
-                    <div key={mallData.id} className="glass-card p-6 flex flex-col h-[400px]">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-sm font-bold text-slate-700 truncate pr-4">{mallData.name}</h3>
+                    <CollapsibleWidget
+                        key={mallData.id}
+                        title={<span className="text-sm font-bold text-slate-700 truncate max-w-[140px] block">{mallData.name}</span>}
+                        headerRight={
                             <div className="px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200 text-[10px] font-black tracking-widest text-slate-500 uppercase whitespace-nowrap shadow-sm">
                                 {mallData.total} Units
                             </div>
-                        </div>
-
+                        }
+                        contentClassName="flex flex-col h-[320px] pt-2"
+                        className="h-auto"
+                    >
                         {/* Radial Occupancy Meter (PieChart Gauge) */}
                         <div className="flex justify-center mb-6 h-[140px] relative">
                             <ResponsiveContainer width="100%" height="100%">
@@ -294,93 +340,111 @@ export default function Dashboard({ user, malls, units }) {
                                 </ResponsiveContainer>
                             </div>
                         </div>
-                    </div>
+                    </CollapsibleWidget>
                 ))}
             </div>
 
             {/* ROW 3: CALENDAR & TEAM STATUS */}
             <div className="flex flex-col gap-8">
                 {/* CALENDAR & NOTES COMBINED */}
-                <div className="glass-card p-6 flex flex-col">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
-                                <LayoutGrid size={20} />
+                <CollapsibleWidget
+                    title="Team Calendar"
+                    icon={<LayoutGrid size={20} />}
+                    headerRight={
+                        <div className="flex items-center space-x-2 bg-slate-50 p-1 rounded-xl border border-slate-100 shadow-sm shrink-0">
+                            <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-white rounded-lg transition-colors text-slate-600 hover:text-indigo-600 shadow-sm"><ChevronLeft size={16} /></button>
+                            <div className="px-2 text-xs font-bold text-slate-700 min-w-[100px] text-center tracking-wide">
+                                {selectedDate.toLocaleString('default', { month: 'short', year: 'numeric' })}
                             </div>
-                            <h3 className="text-xl font-bold text-slate-700">Team Calendar</h3>
+                            <button onClick={() => changeMonth(1)} className="p-1 hover:bg-white rounded-lg transition-colors text-slate-600 hover:text-indigo-600 shadow-sm"><ChevronRight size={16} /></button>
                         </div>
-                        <div className="flex items-center space-x-2 bg-slate-50 p-1 rounded-xl border border-slate-100 shadow-sm">
-                            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-white rounded-lg transition-colors text-slate-600 hover:text-indigo-600 shadow-sm"><ChevronLeft size={18} /></button>
-                            <div className="px-4 text-sm font-bold text-slate-700 min-w-[140px] text-center tracking-wide">
-                                {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                            </div>
-                            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-white rounded-lg transition-colors text-slate-600 hover:text-indigo-600 shadow-sm"><ChevronRight size={18} /></button>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-2 mb-6">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-                            <div key={day} className="text-center text-[10px] font-black text-slate-400 py-2 uppercase tracking-widest">{day}</div>
-                        ))}
-                        {calendarDays.map((date, idx) => {
-                            if (!date) return <div key={`empty-${idx}`} className="h-12"></div>;
-                            const isSelected = selectedDate.toDateString() === date.toDateString();
-                            const hasNotes = notes.some(n => n.target_date === date.toISOString().split('T')[0]);
-                            return (
-                                <button
-                                    key={date.toISOString()}
-                                    onClick={() => setSelectedDate(date)}
-                                    className={`h-12 flex flex-col items-center justify-center rounded-xl transition-all border ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-200 ring-offset-1' : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200 text-slate-600'}`}
-                                >
-                                    <span className="text-sm font-bold">{date.getDate()}</span>
-                                    {hasNotes && <div className={`calendar-dot ${isSelected ? 'bg-white' : ''}`}></div>}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Inline Notes Section */}
-                    <div className="flex-1 flex flex-col mt-4 pt-6 border-t border-slate-100 border-dashed">
-                        {selectedDateNotes.length > 0 ? (
-                            <div className="space-y-3 mb-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                                {selectedDateNotes.map(note => (
-                                    <div key={note.id} className="p-4 rounded-xl bg-indigo-50/30 border border-indigo-100 relative group transition-colors hover:bg-indigo-50 flex flex-col gap-2">
-                                        <p className="text-sm text-slate-700 font-medium leading-relaxed">{note.content}</p>
-                                        <div className="flex justify-between items-center">
-                                            <p className="text-[10px] text-indigo-400 uppercase font-bold tracking-wider">By {note.author}</p>
-                                            {(user.id === note.user_id || user.role === 'admin') && (
-                                                <button onClick={() => handleDeleteNote(note.id)} className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50" aria-label="Delete note">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
+                    }
+                    contentClassName="p-0"
+                >
+                    <div className="relative flex overflow-hidden min-h-[400px]">
+                        {/* CALENDAR GRID */}
+                        <div className={`p-6 flex-1 transition-all duration-300`}>
+                            <div className="grid grid-cols-7 gap-2">
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                                    <div key={day} className="text-center text-[10px] font-black text-slate-400 py-2 uppercase tracking-widest">{day}</div>
                                 ))}
+                                {calendarDays.map((date, idx) => {
+                                    if (!date) return <div key={`empty-${idx}`} className="h-12"></div>;
+                                    const isSelected = selectedDate.toDateString() === date.toDateString();
+                                    const hasNotes = notes.some(n => n.target_date === date.toISOString().split('T')[0]);
+                                    return (
+                                        <button
+                                            key={date.toISOString()}
+                                            onClick={() => {
+                                                setSelectedDate(date);
+                                                setShowNotesPanel(true);
+                                            }}
+                                            className={`h-12 flex flex-col items-center justify-center rounded-xl transition-all border ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-200 ring-offset-1' : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200 text-slate-600'}`}
+                                        >
+                                            <span className="text-sm font-bold">{date.getDate()}</span>
+                                            {hasNotes && <div className={`calendar-dot ${isSelected ? 'bg-white' : ''}`}></div>}
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 mb-6 py-8 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                                <FileText size={24} className="mb-2 opacity-20" />
-                                <p className="text-sm font-medium">No notes for this date</p>
-                            </div>
-                        )}
+                        </div>
 
-                        <form onSubmit={handleAddNote} className="relative mt-auto">
-                            <input
-                                type="text" value={noteContent} onChange={e => setNoteContent(e.target.value)}
-                                placeholder={`Type a note for ${selectedDate.toLocaleDateString()}...`}
-                                className="w-full neu-input pr-12 text-sm placeholder:text-slate-400 shadow-inner"
-                            />
-                            <button type="submit" disabled={!noteContent.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
-                                <Plus size={16} />
-                            </button>
-                        </form>
+                        {/* SLIDE-OUT NOTES SIDE-PANEL */}
+                        <div
+                            className={`absolute top-0 right-0 h-full w-[300px] bg-slate-50 border-l border-white/40 shadow-xl flex flex-col transition-transform duration-300 ease-in-out z-10 ${showNotesPanel ? 'translate-x-0' : 'translate-x-full'}`}
+                        >
+                            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
+                                <h4 className="font-bold text-slate-700 text-sm">{selectedDate.toLocaleDateString()} Notes</h4>
+                                <button onClick={() => setShowNotesPanel(false)} className="text-slate-400 hover:text-red-500 neu-btn w-6 h-6 p-0 rounded-sm flex items-center justify-center"><X size={14} /></button>
+                            </div>
+
+                            <div className="p-4 flex-1 flex flex-col overflow-y-auto">
+                                {selectedDateNotes.length > 0 ? (
+                                    <div className="space-y-3 flex-1 custom-scrollbar">
+                                        {selectedDateNotes.map(note => (
+                                            <div key={note.id} className="p-4 rounded-xl bg-white border border-indigo-100 shadow-sm relative group hover:border-indigo-300 transition-colors flex flex-col gap-2">
+                                                <p className="text-sm text-slate-700 font-medium leading-relaxed">{note.content}</p>
+                                                <div className="flex justify-between items-center">
+                                                    <p className="text-[10px] text-indigo-400 uppercase font-bold tracking-wider">By {note.author}</p>
+                                                    {(user.id === note.user_id || ['admin', 'director'].includes(user.role)) && (
+                                                        <button onClick={() => handleDeleteNote(note.id)} className="text-slate-300 hover:text-red-500 p-1" aria-label="Delete note">
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                                        <FileText size={20} className="mb-2 opacity-20" />
+                                        <p className="text-xs font-medium">No notes</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-white border-t border-slate-200">
+                                <form onSubmit={handleAddNote} className="relative">
+                                    <input
+                                        type="text" value={noteContent} onChange={e => setNoteContent(e.target.value)}
+                                        placeholder={`Add new note...`}
+                                        className="w-full neu-input pr-10 text-sm placeholder:text-slate-400 shadow-inner"
+                                    />
+                                    <button type="submit" disabled={!noteContent.trim()} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-md">
+                                        <Plus size={14} />
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </CollapsibleWidget>
 
                 {/* TEAM STATUS */}
-                <div className="glass-card p-6 flex flex-col justify-center items-center">
-                    <h3 className="text-lg font-bold text-slate-700 mb-4">Team Directory</h3>
-
+                <CollapsibleWidget
+                    title="Team Directory"
+                    icon={<Users size={20} />}
+                    defaultExpanded={true}
+                >
                     <div className="flex justify-center flex-wrap gap-4 py-4 px-4 w-full bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner">
                         {userStatus.online.length === 0 && userStatus.offline.length === 0 && (
                             <span className="text-xs text-slate-400 py-2">No team members found</span>
@@ -404,7 +468,7 @@ export default function Dashboard({ user, malls, units }) {
                             );
                         })}
                     </div>
-                </div>
+                </CollapsibleWidget>
             </div>
         </div>
     );

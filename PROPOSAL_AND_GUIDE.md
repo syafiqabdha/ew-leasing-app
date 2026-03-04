@@ -1,7 +1,7 @@
 # Engwah Leasing Portal: System Proposal & User Guide
 
-**Date:** 2026-02-12
-**Version:** 3.0 (Security & Intelligence Update)
+**Date:** 2026-03-03
+**Version:** 4.0 (DeepSeek Intelligence & PWA Update)
 **Status:** Production-Ready
 
 ---
@@ -9,23 +9,23 @@
 # Part 1: Executive Proposal
 
 ## 1.1 Executive Summary
-The **Engwah Leasing Portal (v3.0)** is an enterprise-grade Property Management System that has evolved beyond a simple inventory tool into an intelligent business assistant. This release introduces **Eva 3.0**, a "Senior Commercial Leasing Analyst" AI, capable of understanding complex technical specifications (M&E, HVAC, Connectivity) and enforcing strict security protocols. With the addition of **Sudo-level access**, robust rate limiting, and rich text communication, the system now meets rigorous operational standards for reliability and data protection.
+The **Engwah Leasing Portal (v4.0)** is an enterprise-grade Property Management System that has evolved beyond a simple inventory tool into an intelligent business assistant. This release introduces **Eva 4.0**, powered by the massive **DeepSeek-v3.1 (671B Cloud)** engine, capable of understanding complex technical specifications (M&E, HVAC, Connectivity) and enforcing strict security protocols. With the addition of **Director-level access**, Progressive Web App (PWA) installability, proactive insights, robust rate limiting, and rich text communication, the system now meets rigorous operational standards for reliability and data protection.
 
 ## 1.2 Key Value Propositions
 *   **Centralized Truth & Document Intelligence**: A single source of truth for all Malls, Units, Tenants, and Contracts. Eva now indexes and provides direct links to uploaded **Sales Kits** and **Floor Plans**.
 *   **Expert AI Analysis**: Eva understands industry-standard terminology (e.g., "60A TPN", "Floor Traps", "FCU Count") and provides detailed technical breakdowns in rich-text format (tables, lists, bold emphasis).
 *   **Enhanced Security & Governance**:
     *   **Rate Limiting**: AI usage is capped (50 req/hr) to prevent abuse and manage costs.
-    *   **Role-Based Access (Sudo/Admin)**: Strict hierarchy ensures only authorized personnel can request data mutations.
+    *   **Role-Based Access (Director/Admin)**: Strict hierarchy ensures only authorized personnel can request data mutations.
     *   **Audit Trails**: All AI conversations are logged for compliance and review (30-day retention).
 *   **Zero-Maintenance Infrastructure**: Built on Docker containerization with self-healing capabilities (e.g., automatic network tunnel restart).
 
 ## 1.3 Technology Stack
 The application utilizes a modern, future-proof stack:
-*   **Frontend**: React.js (Vite) + Tailwind CSS + **Markdown Rendering** (Rich Text UI).
+*   **Frontend**: React.js (Vite) + Tailwind CSS (High-Contrast Neumorphism) + **Markdown Rendering** + **Progressive Web App (PWA)** implementation.
 *   **Backend**: Node.js (Express) REST API with **Event-Driven Architecture**.
-*   **Database**: MySQL 8.0 (Relational Data Integrity) with automated schema migration.
-*   **AI Engine**: Hybrid support for **Ollama (Local)** or **OpenAI/Cloud** APIs, featuring Context-Augmented Generation (RAG).
+*   **Database**: PostgreSQL (pgvector & Drizzle ORM) for Relational Data Integrity and semantic vector capabilities.
+*   **AI Engine**: **DeepSeek-v3.1 (671b-cloud)** connected via API, featuring Context-Augmented Generation (RAG) and proactive notification reading.
 *   **Infrastructure**: Docker Compose + Tailscale (Secure Networking) + **Persistent Funnel Scripts**.
 
 ---
@@ -36,22 +36,22 @@ The application utilizes a modern, future-proof stack:
 1.  **Presentation Layer (Frontend)**:
     *   Responsive "Glassmorphism" UI with Markdown support (Tables, Links, Code Blocks).
     *   Real-time Notification System (Announcements).
-    *   Interactive Mall & Unit Dashboards with "Click-to-Copy" utility.
+    *   **Dashboard Enhancements**: Collapsible widgets to manage cognitive load and streamline user tracking.
     *   Secure JWT-based Authentication.
 2.  **Logic Layer (Backend API)**:
-    *   **Event-Driven Context**: AI memory refreshes immediately upon data changes (Create/Edit Unit).
+    *   **Manual/Event-Driven Context**: AI memory refreshes efficiently on demand or through triggers.
     *   **Rate Limiter & Moderation**: Protects the AI endpoint from spam and offensive content.
-    *   **Chat Logger**: Archives conversations to MySQL for 30 days.
-3.  **Data Layer (MySQL)**:
-    *   Structured tables for `malls`, `units`, `users`, `documents`, `contacts`, `announcements`, and **`chat_logs`**.
-    *   Default **Sudo User** generation for recovery access.
+    *   **Chat Logger**: Archives conversations to PostgreSQL for 30 days.
+3.  **Data Layer (PostgreSQL)**:
+    *   Structured tables for `malls`, `units`, `users`, `documents`, `contacts`, `announcements`, `dashboard_notes`, and **`chat_logs`**.
+    *   Default **Director User** generation for recovery access.
 4.  **AI Layer (Eva)**:
     *   **Persona**: "Senior Commercial Leasing Analyst".
     *   **Knowledge Graph**: Deep integration with Units, Documents, Notifications, and Contacts directory.
 
 ## 2.2 Security Features
 *   **Role-Based Access Control (RBAC)**:
-    *   `Sudo` (Super Admin): Full system control, Database mutations, Emergency access.
+    *   `Director` (Board member): Full system control, Database mutations, Executive oversight.
     *   `Admin`: User management, Property management.
     *   `Staff`: Operational access (Edit units, Upload docs).
     *   `Agent`: Read-only access to availability and specs.
@@ -70,11 +70,12 @@ The application utilizes a modern, future-proof stack:
 ### Accessing the System
 *   **Local Office**: Open your browser and navigate to `http://localhost:5173`.
 *   **Remote / Mobile**: Use the provided secure link (e.g., `https://syafiq-nb.tail5e6f37.ts.net`).
+*   **App Installation (PWA)**: Look for the installation icon in your browser's address bar or the "Add to Home Screen" option on mobile to install the portal as a native-feeling app.
 
 ### Logging In
 1.  Enter your assigned **Username** and **Password**.
 2.  Click **Secure Login**.
-    *   **Super Admin (Sudo)**: `sudo` / `password` (Use for critical system changes).
+    *   **Director**: `admin@pancatz.com` (Use for executive dashboard and system changes).
     *   *Default Admin*: `admin` / `admin` (Please change immediately).
 
 ## 3.2 For Administrators & Staff
@@ -103,17 +104,20 @@ The application utilizes a modern, future-proof stack:
 4.  **Copy Info**: Click "Click to Copy" in the unit modal to instantly grab a formatted summary for WhatsApp/Email.
 
 ### Using Eva (AI Assistant)
-Eva is your 24/7 expert. Click the **"Ask Eva"** button in the bottom right.
-*   **Rich Text**: Eva now responds with formatted tables, lists, and bold text.
-*   **Documents**: Ask "Show me the sales kit for Centrepoint" -> Retrieve a clickable link.
-*   **Technical**: "How many FCU units are in #01-05?" or "List units with >60A power."
+Eva is your 24/7 expert. Click the **"Ask Eva"** floating action button in the bottom right.
+*   **Rich Text**: Eva now responds with formatted tables, lists, and bold text. Note: Eva cannot send files directly in chat; she will point you to the Documents tab.
+*   **Proactive Insights**: Radomly, Eva might remind you of upcoming board meetings or active notifications from the Dashboard.
+*   **Technical Queries**: "How many FCU units are in #01-05?" or "List units with >60A power."
+*   **Commands**:
+    *   `\refresh` - Force Eva to fetch the absolute latest changes from the PostgreSQL database in real-time.
+    *   `\add`, `\remove`, `\change` - Eva is strictly read-only to protect data. Issuing these commands will prompt her to guide you to the correct Dashboard menu (Admin/Director only).
 *   **Contacts**: "Who is the contact for HVAC maintenance?"
 *   **Logout**: Type "logout" or "close" to securely sign out via chat.
 
 ## 3.4 Troubleshooting
 
 **"Rate limit exceeded"?**
-*   You have sent more than 50 messages in an hour. Please wait or contact a Sudo admin.
+*   You have sent more than 50 messages in an hour. Please wait or contact an Admin.
 
 **"Network Error" on Mobile?**
 *   Ensure you are using the HTTPS Tailscale link, not the Localhost link.
