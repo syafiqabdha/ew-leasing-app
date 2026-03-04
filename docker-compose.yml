@@ -1,4 +1,11 @@
 services:
+
+  app:
+    # Change this line to point to your new GitHub Package
+    image: ghcr.io/syafiqabdha/ew-leasing-app:latest
+    build: .
+    ports:
+      - "8080:80"
   # Database Service
   db:
     image: pgvector/pgvector:pg16
