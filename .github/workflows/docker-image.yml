@@ -1,0 +1,10 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+# Clean install to ensure no conflicts
+RUN npm install
+# Explicitly install Tailwind v4 dependencies
+RUN npm install -D tailwindcss @tailwindcss/vite postcss autoprefixer
+COPY . .
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
