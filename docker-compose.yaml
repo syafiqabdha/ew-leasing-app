@@ -1,0 +1,89 @@
+services:
+
+  app:
+    # Change this line to point to your new GitHub Package
+    image: ghcr.io/syafiqabdha/ew-leasing-app:latest
+    build: .
+    ports:
+      - "8080:80"
+  # Database Service
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ew_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-local_dev_password}
+      POSTGRES_DB: ${DB_NAME:-pancatz_leasing}
+    ports:
+      - "0.0.0.0:5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-pancatz_leasing}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Backend API Service
+  backend:
+    build: ./backend
+    container_name: ew_api
+    restart: always
+    ports:
+      - "0.0.0.0:5000:5000"
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-local_dev_password}
+      DB_NAME: ${DB_NAME:-pancatz_leasing}
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_key}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://ollama:11434}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:1.5b}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      # Point to Ollama API Chat Endpoint
+      LLM_API_URL: ${LLM_API_URL:-http://ollama:11434/api/chat}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./.workspace:/app/.workspace
+
+  # Frontend Service (Added for auto-start & network access)
+  frontend:
+    build: ./frontend
+    container_name: ew_ui
+    restart: always
+    ports:
+      - "0.0.0.0:5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Essential for Windows hot-reload
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    # This command makes Vite listen on 0.0.0.0 instead of localhost
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+  # Ollama Service (Local LLM)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ew_ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: [ "CMD", "ollama", "list" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  db_data:
+  ollama_data:
